@@ -5,6 +5,21 @@ Custom types, encoders, and decoders for integrating [msgpack](https://github.co
 Hell yea, nullz :metal:
 
 
+## Before we get started
+
+If `$GOBIN` is not set
+```bash
+$ export GOBIN=$GOPATH/bin
+```
+
+If `$GO111MODULE` is not set
+```bash
+$ export GO111MODULE=on
+```
+
+This package assumes your code is organized as a conventional golang [workspace](https://golang.org/doc/gopath_code.html).
+
+
 ## Usage
 
 `nullz` is just a lib of types and functions, bundled with a converter tool.
@@ -25,7 +40,8 @@ import "github.com/parkerduckworth/nullz"
 
 Install binary (from package directory in `$GOPATH`)
 ```bash
-$ go install <gopath>/github.com/parkerduckworth/nullz/cmd/nullz/nullz.go
+$ git clone https://github.com/parkerduckworth/nullz.git $GOPATH/src/github.com/parkerduckworth/nullz
+$ go install $GOPATH/src/github.com/parkerduckworth/nullz/cmd/nullz/nullz.go
 ```
 
 Test installation
