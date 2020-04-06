@@ -1,2 +1,9 @@
+# Test binary, built with `go test -c`
+*.test
+
+# IDE
 .idea/
+.vscode
+
+# Mac OS
 .DS_Store
