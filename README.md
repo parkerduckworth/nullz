@@ -66,3 +66,7 @@ Convert model file
 ```bash
 $ nullz convert `PATH` > <output-filename>
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE)
