@@ -23,9 +23,9 @@ Import where necessary
 import "github.com/parkerduckworth/nullz"
 ```
 
-Install binary (from package directory)
+Install binary (from package directory in `$GOPATH`)
 ```bash
-$ cd <gopath>/nullz && go install
+$ go install <gopath>/github.com/parkerduckworth/nullz/cmd/nullz/nullz.go
 ```
 
 Test installation
