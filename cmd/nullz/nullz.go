@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 	"log"
 	"os"
 	"strings"
@@ -12,9 +12,9 @@ import (
 func main() {
 	app := &cli.App{
 		Name: "nullz",
-		Version: "0.1.2",
+		Version: "0.1.3",
 		Authors: []*cli.Author{
-			&cli.Author{
+			{
 				Name:  "parkerduckworth",
 				Email: "duckw0rth@protonmail.com",
 			},
