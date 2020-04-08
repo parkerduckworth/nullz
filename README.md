@@ -63,7 +63,7 @@ AUTHOR:
    parkerduckworth <duckw0rth@protonmail.com>
 
 COMMANDS:
-   convert  convert file provided as [PATH]
+   convert  convert directory of model files provided as [PATH]
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
@@ -72,9 +72,9 @@ GLOBAL OPTIONS:
 
 ```
 
-Convert model file
+Convert model files
 ```bash
-$ nullz convert [PATH] > `output-filename`
+$ nullz convert models
 ```
 
 ## License
