@@ -44,47 +44,54 @@ func main() {
 }
 
 func execute(path string) {
-	err := setupOutputInfo(path)
+	processInput(path)
+	setupOutputDir()
+	walkFileTree()
+	replaceInputWithOutput()
+}
+
+func processInput(path string) {
+	// Check if input exists
+	_, err := os.Stat(path)
 	checkNullzError(err)
 
-	walkDirTree(path)
+	// Set abs path to input and output dirs in env
+	initEnvVars(path)
 }
 
-func setupOutputInfo(path string) error {
-	parentDir, err := getParentDir(path)
+func initEnvVars(path string) {
+	cwd, err := os.Getwd()
 	checkNullzError(err)
+	inputFileName := filepath.Base(path)
 
-	os.Setenv("CONVERTED_PATH", parentDir+"/converted-models")
-
-	if err := os.Mkdir(os.Getenv("CONVERTED_PATH"), 0777); err != nil {
-		return err
-	}
-
-	return nil
+	os.Setenv("ABS_INPUT", filepath.Join(cwd, inputFileName))
+	os.Setenv("ABS_OUTPUT", filepath.Join(cwd, "nullz-models"))
 }
 
-func getParentDir(path string) (string, error) {
-	parentDir := filepath.Dir(strings.TrimSuffix(path, "/"))
-	if parentDir == "." {
-		abspath, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		parentDir = abspath
+func setupOutputDir() {
+	path := os.Getenv("ABS_OUTPUT")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.Mkdir(path, os.ModePerm)
 	}
-
-	return parentDir, nil
 }
 
-func walkDirTree(path string) {
+func walkFileTree() {
+	path := os.Getenv("ABS_INPUT")
 	err := filepath.Walk(path, convert)
 	checkNullzError(err)
 }
 
-func convert(path string, info os.FileInfo, err error) error {
-	isDir, err := isDirectory(path)
+// Remove the input dir and rename output dir with name of input
+func replaceInputWithOutput() {
+	err := os.RemoveAll(os.Getenv("ABS_INPUT"))
 	checkNullzError(err)
-	if isDir {
+
+	err = os.Rename(os.Getenv("ABS_OUTPUT"), os.Getenv("ABS_INPUT"))
+	checkNullzError(err)
+}
+
+func convert(path string, info os.FileInfo, err error) error {
+	if isDirectory(path) {
 		return nil
 	}
 
@@ -92,8 +99,7 @@ func convert(path string, info os.FileInfo, err error) error {
 	checkNullzError(err)
 	defer input.Close()
 
-	outputPath := filepath.Join(os.Getenv("CONVERTED_PATH"), filepath.Base(path))
-	output, err := os.Create(outputPath)
+	output, err := os.Create(filepath.Join(os.Getenv("ABS_OUTPUT"), filepath.Base(path)))
 	checkNullzError(err)
 	defer output.Close()
 
@@ -119,12 +125,10 @@ func replaceWithNullz(line string) string {
 	return replacedLine
 }
 
-func isDirectory(path string) (bool, error) {
+func isDirectory(path string) bool {
 	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-	return fileInfo.IsDir(), err
+	checkNullzError(err)
+	return fileInfo.IsDir()
 }
 
 func checkNullzError(err error) {
