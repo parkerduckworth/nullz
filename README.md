@@ -77,6 +77,11 @@ Convert model files
 $ nullz convert models
 ```
 
+Test that conversion was successful
+```bash
+$ go test ./models
+```
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE)

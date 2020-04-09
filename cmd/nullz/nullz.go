@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	app := &cli.App{
 		Name:    "nullz",
-		Version: "0.1.5",
+		Version: "0.1.6",
 		Authors: []*cli.Author{
 			{
 				Name:  "parkerduckworth",
@@ -40,54 +41,89 @@ func main() {
 	}
 
 	err := app.Run(os.Args)
-	checkNullzError(err)
+	terminateIfError(err)
 }
 
 func execute(path string) {
-	processInput(path)
-	setupOutputDir()
-	walkFileTree()
-	replaceInputWithOutput()
+	err := processInput(path)
+	terminateIfError(err)
+
+	err = setupOutputDir()
+	terminateIfError(err)
+
+	err = walkFileTree()
+	terminateIfError(err)
+
+	err = replaceInputWithOutput()
+	terminateIfError(err)
 }
 
-func processInput(path string) {
+func processInput(path string) error {
 	// Check if input exists
 	_, err := os.Stat(path)
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "input does not exist")
+	}
 
 	// Set abs path to input and output dirs in env
-	initEnvVars(path)
+	err = initEnvVars(path)
+	if err != nil {
+		return errors.Wrap(err, "unable to init environment variables")
+	}
+
+	return nil
 }
 
-func initEnvVars(path string) {
+func initEnvVars(path string) error {
 	cwd, err := os.Getwd()
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine current working directory")
+	}
+
 	inputFileName := filepath.Base(path)
 
 	os.Setenv("ABS_INPUT", filepath.Join(cwd, inputFileName))
 	os.Setenv("ABS_OUTPUT", filepath.Join(cwd, "nullz-models"))
+
+	return nil
 }
 
-func setupOutputDir() {
+func setupOutputDir() error {
 	path := os.Getenv("ABS_OUTPUT")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	_, err := os.Stat(path)
+
+	if os.IsNotExist(err) {
 		os.Mkdir(path, os.ModePerm)
+	} else {
+		return errors.Wrap(err, "failed to make output directory")
 	}
+
+	return nil
 }
 
-func walkFileTree() {
+func walkFileTree() error {
 	path := os.Getenv("ABS_INPUT")
 	err := filepath.Walk(path, convert)
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "failed to traverse input directory")
+	}
+
+	return nil
 }
 
-// Remove the input dir and rename output dir with name of input
-func replaceInputWithOutput() {
+func replaceInputWithOutput() error {
+	// Remove the input dir and rename output dir with name of input
 	err := os.RemoveAll(os.Getenv("ABS_INPUT"))
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove input directory")
+	}
 
 	err = os.Rename(os.Getenv("ABS_OUTPUT"), os.Getenv("ABS_INPUT"))
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "failed to rename output directory")
+	}
+
+	return nil
 }
 
 func convert(path string, info os.FileInfo, err error) error {
@@ -96,11 +132,15 @@ func convert(path string, info os.FileInfo, err error) error {
 	}
 
 	input, err := os.Open(path)
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "failed to open input file")
+	}
 	defer input.Close()
 
 	output, err := os.Create(filepath.Join(os.Getenv("ABS_OUTPUT"), filepath.Base(path)))
-	checkNullzError(err)
+	if err != nil {
+		return errors.Wrap(err, "failed to create output file")
+	}
 	defer output.Close()
 
 	writer := bufio.NewWriter(output)
@@ -112,9 +152,12 @@ func convert(path string, info os.FileInfo, err error) error {
 		writer.Flush()
 	}
 
-	checkNullzError(scanner.Err())
-	log.Println("converted", path)
+	err = scanner.Err()
+	if err != nil {
+		return errors.Wrap(err, "error detected in input file contents")
+	}
 
+	log.Println("converted", path)
 	return nil
 }
 
@@ -127,11 +170,11 @@ func replaceWithNullz(line string) string {
 
 func isDirectory(path string) bool {
 	fileInfo, err := os.Stat(path)
-	checkNullzError(err)
+	terminateIfError(err)
 	return fileInfo.IsDir()
 }
 
-func checkNullzError(err error) {
+func terminateIfError(err error) {
 	if err != nil {
 		log.Fatal("nullz error: ", err)
 	}
